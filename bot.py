@@ -25,14 +25,14 @@ if os.getenv('TOKEN')!=None:
     def user(update: Update, context: CallbackContext):
         context.bot.send_message(chat_id=update.effective_chat.id, text=update.effective_chat.id)
     def enable_ssh(update: Update, context: CallbackContext):
-        if update.effective_chat.id == 668688282:
-            os.system("ufw allow 8022")
+        if update.effective_chat.id == os.getenv('ADMIN_UID'):
+            os.system("ufw allow ".join(os.getenv('SSH_PORT')))
             context.bot.send_message(chat_id=update.effective_chat.id, text="ssh port已開放")
         else:
             context.bot.send_message(chat_id=update.effective_chat.id, text="沒有權限")
     def disable_ssh(update: Update, context: CallbackContext):
-        if update.effective_chat.id == 668688282:
-            os.system("ufw delete allow 8022")
+        if update.effective_chat.id == os.getenv('ADMIN_UID'):
+            os.system("ufw delete allow ".join(os.getenv('SSH_PORT')))
             context.bot.send_message(chat_id=update.effective_chat.id, text="ssh port已禁用")
         else:
             context.bot.send_message(chat_id=update.effective_chat.id, text="沒有權限")
@@ -46,7 +46,7 @@ if os.getenv('TOKEN')!=None:
 
     class helpFilter(MessageFilter):
         def filter(self, message):
-            cmdList= ['/user','ssh']
+            cmdList= ['/user','/enable_ssh','/disable_ssh']
             return message.text not in cmdList
 
     help_filter = helpFilter()
