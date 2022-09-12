@@ -1,15 +1,16 @@
-from telegram.ext import Updater
-import logging
-
-from telegram import Update
-from telegram.ext import CallbackContext 
-from telegram.ext import MessageHandler, Filters
-from telegram.ext import CommandHandler
 
 import os
+import logging
+from telegram import Update
 from dotenv import load_dotenv
+from telegram.ext import Updater
+from telegram.ext import MessageFilter
+from telegram.ext import MessageHandler
+from telegram.ext import CommandHandler
+from telegram.ext import CallbackContext 
 
 load_dotenv()
+
 if os.getenv('TOKEN')!=None:
     try:
         updater = Updater(token=os.getenv('TOKEN'), use_context=True)
@@ -23,14 +24,30 @@ if os.getenv('TOKEN')!=None:
 
     def user(update: Update, context: CallbackContext):
         context.bot.send_message(chat_id=update.effective_chat.id, text=update.effective_chat.id)
-    
+    def enable_ssh(update: Update, context: CallbackContext):
+        if update.effective_chat.id == 668688282:
+            os.system("ufw allow 8022")
+            context.bot.send_message(chat_id=update.effective_chat.id, text="ssh port已開放")
+        else:
+            context.bot.send_message(chat_id=update.effective_chat.id, text="沒有權限")
+    def disable_ssh(update: Update, context: CallbackContext):
+        if update.effective_chat.id == 668688282:
+            os.system("ufw delete allow 8022")
+            context.bot.send_message(chat_id=update.effective_chat.id, text="ssh port已禁用")
+        else:
+            context.bot.send_message(chat_id=update.effective_chat.id, text="沒有權限")
     user_handler = CommandHandler('user', user)
+    enable_ssh_handler = CommandHandler('enable_ssh', enable_ssh)
+    disable_ssh_handler = CommandHandler('disable_ssh', disable_ssh)
     dispatcher.add_handler(user_handler)
-    from telegram.ext import MessageFilter
+    dispatcher.add_handler(enable_ssh_handler)
+    dispatcher.add_handler(disable_ssh_handler)
+    
 
     class helpFilter(MessageFilter):
         def filter(self, message):
-            return message.text != '/user'
+            cmdList= ['/user','ssh']
+            return message.text not in cmdList
 
     help_filter = helpFilter()
 
