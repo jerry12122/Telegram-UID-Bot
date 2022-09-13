@@ -26,13 +26,15 @@ if os.getenv('TOKEN')!=None:
         context.bot.send_message(chat_id=update.effective_chat.id, text=update.effective_chat.id)
     def enable_ssh(update: Update, context: CallbackContext):
         if update.effective_chat.id == int(os.getenv('ADMIN_UID')):
-            os.system("ufw allow ".join(os.getenv('SSH_PORT')))
+            cmd = f"ufw allow {os.getenv('SSH_PORT')}"
+            os.system(cmd)
             context.bot.send_message(chat_id=update.effective_chat.id, text="ssh port已開放")
         else:
             context.bot.send_message(chat_id=update.effective_chat.id, text="沒有權限")
     def disable_ssh(update: Update, context: CallbackContext):
         if update.effective_chat.id == int(os.getenv('ADMIN_UID')):
-            os.system("ufw delete allow ".join(os.getenv('SSH_PORT')))
+            cmd = f"ufw delete allow {os.getenv('SSH_PORT')}"
+            os.system(cmd)
             context.bot.send_message(chat_id=update.effective_chat.id, text="ssh port已禁用")
         else:
             context.bot.send_message(chat_id=update.effective_chat.id, text="沒有權限")
