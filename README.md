@@ -28,3 +28,24 @@ cp .env.sample .env
 ```
 pyhton3 bot.py
 ```
+
+## 設定 systemd
+
+### 編輯 bot.service
+
+把`ExecStart=/usr/bin/python3 /root/tgbot/bot.py`更換為你的專案目錄
+
+### 啟動服務
+
+```bash
+cp ./bot.service /lib/systemd/system/
+systemctl daemon-reload
+systemctl enable bot
+systemctl start bot
+```
+
+### 查看執行狀態
+
+```bash
+service bot status
+```
