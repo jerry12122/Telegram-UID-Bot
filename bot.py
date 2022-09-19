@@ -11,15 +11,15 @@ from telegram.ext.filters import Filters
 from telegram.ext import ConversationHandler
 from telegram.ext import CallbackQueryHandler 
 from telegram.ext.messagehandler import MessageHandler
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ForceReply
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 load_dotenv()
 text = '''
 指令列表:
-/user 獲得user id
-/enable_port [port] 開port
-/disable_port [port] 關port
+/help 獲得幫助
+/user 獲得user id   
+/port 設定防火牆
 '''
-ENABLE_PORT,DISABLE_PORT, EXPECT_BUTTON_CLICK = range(2)
+ENABLE_PORT, DISABLE_PORT, EXPECT_BUTTON_CLICK = range(3)
 def ufw_control(port,isOpen):
     isDelete = "" if isOpen else "delete"
     cmd = f"ufw {isDelete} allow {port}"
@@ -42,7 +42,7 @@ if os.getenv('TOKEN')!=None:
     # 返回使用者ID
     def user(update: Update, context: CallbackContext):
         context.bot.send_message(chat_id=update.effective_chat.id, text=update.effective_chat.id)
-
+    # /port後會執行得動作
     def set_port(update: Update, context: CallbackContext):
         if update.effective_chat.id == int(os.getenv('ADMIN_UID')):
             button = [[InlineKeyboardButton("enable", callback_data='enable'),InlineKeyboardButton("disable", callback_data='disable')]]
@@ -52,7 +52,7 @@ if os.getenv('TOKEN')!=None:
         else:
             context.bot.send_message(chat_id=update.effective_chat.id, text="沒有權限")
             return ConversationHandler.END
-
+    # 按下按鈕後會執行的動作
     def button_click_handler(update: Update, context: CallbackContext):
         query = update.callback_query
         context.bot.send_message(chat_id=update.effective_chat.id, text="請輸入port")
@@ -60,7 +60,7 @@ if os.getenv('TOKEN')!=None:
             return ENABLE_PORT
         elif query.data == 'disable':
             return DISABLE_PORT
-
+    # 如果按下enable會執行的動作
     def enable_port_input(update: Update, context: CallbackContext):
         port = update.message.text
         try:
@@ -70,7 +70,7 @@ if os.getenv('TOKEN')!=None:
         except:
             context.bot.send_message(chat_id=update.effective_chat.id, text="錯誤")
         return ConversationHandler.END
-
+    # 如果按下disable會執行的動作
     def disable_port_input(update: Update, context: CallbackContext):
         port = update.message.text
         try:
@@ -80,7 +80,7 @@ if os.getenv('TOKEN')!=None:
         except:
             context.bot.send_message(chat_id=update.effective_chat.id, text="錯誤")
         return ConversationHandler.END
-
+    # 取消動作
     def cancel(update: Update, context: CallbackContext):
         context.bot.send_message(chat_id=update.effective_chat.id, text='Name Conversation cancelled by user.')
         return ConversationHandler.END
