@@ -12,14 +12,15 @@ from telegram.ext import ConversationHandler
 from telegram.ext import CallbackQueryHandler 
 from telegram.ext.messagehandler import MessageHandler
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+"""
+help - 獲得幫助
+user - 獲得user id
+port - 設定防火牆
+frp - 設定frp
+"""
 load_dotenv()
-text = '''
-指令列表:
-/help 獲得幫助
-/user 獲得user id   
-/port 設定防火牆
-'''
-ENABLE_PORT, DISABLE_PORT, EXPECT_BUTTON_CLICK = range(3)
+text = os.getenv('HELP_MESSAGE')
+ENABLE_PORT, DISABLE_PORT, GET_STATUS ,UFW_BUTTON_CLICK,FRP_BUTTON_CLICK = range(5)
 def ufw_control(port,isOpen):
     isDelete = "" if isOpen else "delete"
     cmd = f"ufw {isDelete} allow {port}"
@@ -48,12 +49,12 @@ if os.getenv('TOKEN')!=None:
             button = [[InlineKeyboardButton("enable", callback_data='enable'),InlineKeyboardButton("disable", callback_data='disable')]]
             markup = InlineKeyboardMarkup(button)
             update.message.reply_text('請選擇動作', reply_markup=markup)
-            return EXPECT_BUTTON_CLICK
+            return UFW_BUTTON_CLICK
         else:
             context.bot.send_message(chat_id=update.effective_chat.id, text="沒有權限")
             return ConversationHandler.END
     # 按下按鈕後會執行的動作
-    def button_click_handler(update: Update, context: CallbackContext):
+    def ufw_click_handler(update: Update, context: CallbackContext):
         query = update.callback_query
         context.bot.send_message(chat_id=update.effective_chat.id, text="請輸入port")
         if query.data == 'enable':
@@ -84,22 +85,43 @@ if os.getenv('TOKEN')!=None:
     def cancel(update: Update, context: CallbackContext):
         context.bot.send_message(chat_id=update.effective_chat.id, text='Name Conversation cancelled by user.')
         return ConversationHandler.END
+    # /frp後會執行的動作
+    def frp_action(update: Update, context: CallbackContext):
+        if update.effective_chat.id == int(os.getenv('ADMIN_UID')):
+            button = [[InlineKeyboardButton("reload", callback_data='reload')]]
+            markup = InlineKeyboardMarkup(button)
+            update.message.reply_text('請選擇動作', reply_markup=markup)
+            return FRP_BUTTON_CLICK
+        else:
+            context.bot.send_message(chat_id=update.effective_chat.id, text="沒有權限")
+            return ConversationHandler.END
+    # 按下按鈕後會執行的動作
+    def frp_click_handler(update: Update, context: CallbackContext):
+        query = update.callback_query
+        if query.data == 'reload':
+            cmd = os.getenv('FRP_RELOAD_CMD')
+            cmd_return = subprocess.check_output(cmd, shell=True).decode("utf-8")
+            context.bot.send_message(chat_id=update.effective_chat.id, text=f'{cmd_return}')
+        else :
+            context.bot.send_message(chat_id=update.effective_chat.id, text="錯誤")
+        return ConversationHandler.END
 
     help_handler = CommandHandler("help", help)
     user_handler = CommandHandler('user', user)
-    port_handler = ConversationHandler(
-        entry_points=[CommandHandler('port', set_port)],
+    conversation_handler = ConversationHandler(
+        entry_points=[CommandHandler('port', set_port),CommandHandler('frp', frp_action)],
         states={
             ENABLE_PORT: [MessageHandler(Filters.text, enable_port_input)],
             DISABLE_PORT: [MessageHandler(Filters.text, disable_port_input)],
-            EXPECT_BUTTON_CLICK:[CallbackQueryHandler(button_click_handler)],
+            UFW_BUTTON_CLICK:[CallbackQueryHandler(ufw_click_handler)],
+            FRP_BUTTON_CLICK:[CallbackQueryHandler(frp_click_handler)],
         },
         fallbacks=[CommandHandler('cancel', cancel)]
     )
 
     dispatcher.add_handler(help_handler)
     dispatcher.add_handler(user_handler)
-    dispatcher.add_handler(port_handler)
+    dispatcher.add_handler(conversation_handler)
 
     updater.start_polling()
 else:
